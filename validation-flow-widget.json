@@ -1,0 +1,125 @@
+{
+  "id": "com.emineo.validationFlowWidget",
+  "version": "1.1.0",
+  "name": "Validation Flow Widget",
+  "description": "Flux de validation en pipeline par demande. 3 bandes : en-tête, personnes, pipeline (Département › Section › Décanat › Rectorat).",
+  "newInstancePrefix": "ValidationFlow",
+  "vendor": "emineo",
+  "license": "MIT",
+  "icon": "",
+  "webcomponents": [
+    {
+      "kind": "main",
+      "tag": "validation-flow-widget",
+      "url": "https://matlo74.github.io/sac-widgets/validation-flow-widget.js",
+      "integrity": "",
+      "ignoreIntegrity": true
+    },
+    {
+      "kind": "builder",
+      "tag": "validation-flow-widget-builder",
+      "url": "https://matlo74.github.io/sac-widgets/validation-flow-widget-builder.js",
+      "integrity": "",
+      "ignoreIntegrity": true
+    }
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "default": "Flux de Validation",
+      "description": "Titre affiché en haut du widget"
+    },
+    "maxColumns": {
+      "type": "integer",
+      "default": 3,
+      "description": "Nombre de colonnes dans la grille (1 à 5)"
+    },
+    "showProjectName": {
+      "type": "boolean",
+      "default": true,
+      "description": "Afficher le nom du projet sur la card"
+    }
+  },
+  "dataBindings": {
+    "validationData": {
+      "feeds": [
+        {
+          "id": "demande",
+          "description": "Demande (dimension principale)",
+          "type": "dimension"
+        },
+        {
+          "id": "statutGlobal",
+          "description": "Statut Global de la demande",
+          "type": "dimension"
+        },
+        {
+          "id": "currentUser",
+          "description": "Utilisateur courant (login ou nom)",
+          "type": "dimension"
+        },
+        {
+          "id": "nomProjet",
+          "description": "Nom du Projet",
+          "type": "dimension"
+        },
+        {
+          "id": "responsableProjet",
+          "description": "Responsable Projet",
+          "type": "dimension"
+        },
+        {
+          "id": "statutAction",
+          "description": "Code étape en cours (A3, A4, A5, A6, A7, A8 ou B1)",
+          "type": "dimension"
+        },
+        {
+          "id": "responsableAction",
+          "description": "Responsable de l'action en cours",
+          "type": "dimension"
+        },
+        {
+          "id": "respA3",
+          "description": "Responsable Contrôle Département (A3)",
+          "type": "dimension"
+        },
+        {
+          "id": "respA4",
+          "description": "Responsable Validation Département (A4)",
+          "type": "dimension"
+        },
+        {
+          "id": "respA5",
+          "description": "Responsable Contrôle Section (A5)",
+          "type": "dimension"
+        },
+        {
+          "id": "respA6",
+          "description": "Responsable Validation Section (A6)",
+          "type": "dimension"
+        },
+        {
+          "id": "respA7",
+          "description": "Responsable Contrôle Décanat (A7)",
+          "type": "dimension"
+        },
+        {
+          "id": "respA8",
+          "description": "Responsable Validation Décanat (A8)",
+          "type": "dimension"
+        },
+        {
+          "id": "respB1",
+          "description": "Responsable Validation Rectorat (B1)",
+          "type": "dimension"
+        }
+      ]
+    }
+  },
+  "methods": {},
+  "events": {
+    "onCardClick": {
+      "description": "Déclenché lors du clic sur une card de demande"
+    }
+  }
+}
