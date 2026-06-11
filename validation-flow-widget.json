@@ -40,8 +40,8 @@
       "description": "Afficher le nom du projet sur la card"
     },
     "feedMapping": {
-      "type": "Object<string>",
-      "default": {},
+      "type": "string",
+      "default": "{}",
       "description": "Mapping feedId → ID technique dimension SAC (configuré via le panel Générateur)"
     }
   },
