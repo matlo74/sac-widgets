@@ -1,6 +1,6 @@
 /**
  * Validation Flow Widget — SAP Analytics Cloud Custom Widget
- * Version : 1.1.0
+ * Version : 1.2.0
  * Vendor  : emineo
  *
  * Affiche un flux de validation en pipeline pour chaque demande.
@@ -474,7 +474,8 @@
       this._props = {
         title:           "Flux de Validation",
         maxColumns:      3,
-        showProjectName: true
+        showProjectName: true,
+        feedMapping:     {}
       };
     }
 
@@ -509,6 +510,9 @@
     get showProjectName()  { return this._props.showProjectName; }
     set showProjectName(v) { this._set("showProjectName", v); }
 
+    get feedMapping()      { return this._props.feedMapping; }
+    set feedMapping(v)     { this._set("feedMapping", v); }
+
     _set(key, value) {
       this._props[key] = value;
       this.dispatchEvent(new CustomEvent("propertiesChanged", {
@@ -539,11 +543,38 @@
       return map;
     }
 
+    // ── Accès par index de feed (binding natif SAC) ────────────────
     _getValue(row, fieldMap, feedId) {
       const i = fieldMap[feedId];
       if (i === undefined) return null;
       const cell = row[`dimensions_${i}`];
       return cell ? (cell.label || cell.id || null) : null;
+    }
+
+    // ── Accès par ID technique de dimension (feedMapping builder) ──
+    _getValueByDimId(row, dimId) {
+      if (!dimId) return null;
+      // Essai 1 : clé exacte
+      const c1 = row[dimId];
+      if (c1 !== undefined && c1 !== null) {
+        return c1.description || c1.label || c1.id || String(c1) || null;
+      }
+      // Essai 2 : clé exacte + "_0" (suffixe parfois ajouté par SAC)
+      const c2 = row[dimId + "_0"];
+      if (c2 !== undefined && c2 !== null) {
+        return c2.description || c2.label || c2.id || String(c2) || null;
+      }
+      return null;
+    }
+
+    // ── Résout le feedMapping (string JSON ou objet) ───────────────
+    _parseFeedMapping() {
+      const fm = this._props.feedMapping;
+      if (!fm) return {};
+      if (typeof fm === "string") {
+        try { return JSON.parse(fm); } catch (e) { return {}; }
+      }
+      return (typeof fm === "object") ? fm : {};
     }
 
     // ── Render principal ───────────────────────────────────────────
@@ -559,12 +590,28 @@
       try {
         const db = this.dataBindings && this.dataBindings.getDataBinding("validationData");
         if (db && Array.isArray(db.data) && db.data.length > 0) {
-          const fieldMap = this._buildFieldMap(db.metadata);
-          this._renderCards(r.getElementById("vfwGrid"), db.data, fieldMap);
+          const feedMapping = this._parseFeedMapping();
+          const useFeedMapping = Object.values(feedMapping).some(v => v && String(v).trim());
+
+          if (useFeedMapping) {
+            // ── Mode feedMapping (configuré via le panel builder) ──
+            console.info("[ValidationFlow] Mode feedMapping activé", feedMapping);
+            this._renderCardsByMapping(r.getElementById("vfwGrid"), db.data, feedMapping);
+          } else {
+            // ── Mode binding natif SAC (feeds liés via onglet Données) ──
+            const fieldMap = this._buildFieldMap(db.metadata);
+            this._renderCards(r.getElementById("vfwGrid"), db.data, fieldMap);
+          }
+
           const n = db.data.length;
           r.getElementById("vfwCount").textContent =
             `${n} demande${n > 1 ? "s" : ""}`;
           return;
+        }
+        // Debug : log les clés disponibles si data binding connecté mais vide
+        if (db) {
+          console.info("[ValidationFlow] data binding connecté mais data vide.",
+            "metadata:", db.metadata, "feedMapping:", this._parseFeedMapping());
         }
       } catch (err) {
         console.warn("[ValidationFlowWidget] Erreur data binding :", err);
@@ -587,6 +634,103 @@
           <p>Liez un modèle SAC pour afficher les demandes</p>
           <small>Glissez les 14 dimensions sur les feeds de données</small>
         </div>`;
+    }
+
+    // ── Rendu via feedMapping (IDs techniques de dimension) ───────
+    _renderCardsByMapping(grid, rows, feedMapping) {
+      // Log la structure du 1er row pour aider au debug
+      if (rows.length > 0) {
+        console.info("[ValidationFlow] Clés du 1er row :", Object.keys(rows[0]));
+      }
+      // Délègue à _renderCards en utilisant _getValueByDimId
+      grid.innerHTML = "";
+      const showProject = this._props.showProjectName !== false;
+
+      rows.forEach((row) => {
+        const g = (fId) => this._getValueByDimId(row, feedMapping[fId]);
+        const demande    = g("demande")           || "—";
+        const stGlobal   = g("statutGlobal")      || "—";
+        const user       = g("currentUser")       || "—";
+        const projet     = g("nomProjet")         || "—";
+        const respProjet = g("responsableProjet") || "—";
+        const curStep    = g("statutAction")      || "";
+        const respSteps  = {
+          A3: g("respA3"), A4: g("respA4"),
+          A5: g("respA5"), A6: g("respA6"),
+          A7: g("respA7"), A8: g("respA8"),
+          B1: g("respB1")
+        };
+
+        const globalColor = getStatusColor(stGlobal);
+        const badgeBg     = globalColor + "1F";
+        const badgeBorder = globalColor + "33";
+        const avatarUser  = getAvatarColor(user);
+        const avatarResp  = getAvatarColor(respProjet);
+
+        const pipelineHTML = GROUPS.map((grp, i) => {
+          const stepsHtml = grp.steps
+            .map(sid => this._renderStepBox(sid, respSteps[sid], curStep))
+            .join("");
+          const grpClass = grp.steps.length === 1 ? "vfw-grp single" : "vfw-grp";
+          const arrow    = i < GROUPS.length - 1 ? '<div class="vfw-arrow">›</div>' : "";
+          return `<div class="${grpClass}">
+            <div class="vfw-grp-lbl">${esc(grp.label)}</div>
+            <div class="vfw-grp-steps">${stepsHtml}</div>
+          </div>${arrow}`;
+        }).join("");
+
+        const card = document.createElement("div");
+        card.className = "vfw-card";
+        card.setAttribute("role", "button");
+        card.setAttribute("tabindex", "0");
+        card.innerHTML = /* html */`
+          <span class="vfw-accent" style="background:${globalColor}"></span>
+          <div class="vfw-band-head">
+            <div class="vfw-head-row">
+              <span class="vfw-card-title">${esc(demande)}</span>
+              <span class="vfw-badge"
+                    style="background:${badgeBg};color:${globalColor};border:1px solid ${badgeBorder};">
+                <span class="vfw-badge-dot"></span>${esc(stGlobal)}
+              </span>
+              ${curStep ? `<span class="vfw-step-pill">Étape : ${esc(curStep)}</span>` : ""}
+            </div>
+            ${showProject ? `<div class="vfw-proj">${esc(projet)}</div>` : ""}
+          </div>
+          <div class="vfw-band-people">
+            <div class="vfw-person">
+              <span class="vfw-avatar" style="background:${avatarUser};" title="${esc(user)}">
+                ${esc(getInitials(user))}
+              </span>
+              <div>
+                <div class="vfw-person-lbl">Utilisateur</div>
+                <div class="vfw-person-name">${esc(user)}</div>
+              </div>
+            </div>
+            <div class="vfw-sep"></div>
+            <div class="vfw-person" style="flex:1;">
+              <span class="vfw-avatar" style="background:${avatarResp};" title="${esc(respProjet)}">
+                ${esc(getInitials(respProjet))}
+              </span>
+              <div style="min-width:0;">
+                <div class="vfw-person-lbl">Resp. projet</div>
+                <div class="vfw-person-name">${esc(respProjet)}</div>
+              </div>
+            </div>
+          </div>
+          <div class="vfw-band-pipeline">${pipelineHTML}</div>`;
+
+        const fireClick = () => {
+          this.dispatchEvent(new CustomEvent("onCardClick", {
+            bubbles: false,
+            detail: { demandeId: demande, statutGlobal: stGlobal }
+          }));
+        };
+        card.addEventListener("click", fireClick);
+        card.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fireClick(); }
+        });
+        grid.appendChild(card);
+      });
     }
 
     // ── Rendu d'une boîte d'étape ──────────────────────────────────
