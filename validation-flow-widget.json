@@ -11,14 +11,14 @@
     {
       "kind": "main",
       "tag": "validation-flow-widget",
-      "url": "https://raw.githubusercontent.com/matlo74/sac-widgets/main/validation-flow-widget.js",
+      "url": "https://matlo74.github.io/sac-widgets/validation-flow-widget.js",
       "integrity": "",
       "ignoreIntegrity": true
     },
     {
       "kind": "builder",
       "tag": "validation-flow-widget-builder",
-      "url": "https://raw.githubusercontent.com/matlo74/sac-widgets/main/validation-flow-widget-builder.js",
+      "url": "https://matlo74.github.io/sac-widgets/validation-flow-widget-builder.js",
       "integrity": "",
       "ignoreIntegrity": true
     }
