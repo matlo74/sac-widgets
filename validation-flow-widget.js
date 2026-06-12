@@ -188,7 +188,7 @@
     const si = STEP_ORDER.indexOf(stepId);
     // Si le code courant est inconnu, on traite toutes les étapes comme en attente
     if (ci === -1) return resp ? "attente" : "nonassigne";
-    if (si < ci)   return resp ? "valide"  : "passe";
+    if (si < ci)   return resp ? "valide"  : "nonassigne";
     if (si === ci) return "encours";
     return resp ? "attente" : "nonassigne";
   }
