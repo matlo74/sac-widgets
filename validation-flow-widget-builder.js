@@ -307,7 +307,8 @@
         title:           "Flux de Validation",
         maxColumns:      3,
         showProjectName: true,
-        feedMapping:     {}
+        feedMapping:     {},
+        availableDims:   ""
       };
       this._ready  = false;
       this._timers = {};
@@ -322,33 +323,78 @@
 
     // ── SAC Lifecycle ──────────────────────────────────────────────
     onCustomWidgetBeforeUpdate(changed) {
+      const prevDims = this._props.availableDims;
       this._props = Object.assign({}, this._props, changed);
+      // Régénère les champs si la liste des dimensions a changé
+      if (this._ready && changed.availableDims !== undefined && changed.availableDims !== prevDims) {
+        this._renderMappingFields();
+        this._attachMappingListeners();
+      }
     }
     onCustomWidgetAfterUpdate() {
       if (this._ready) this._syncUI();
+    }
+
+    // ── Retourne la liste des dimensions disponibles ──────────────
+    _getDims() {
+      const av = this._props.availableDims || "";
+      return av.split("|").map(s => s.trim()).filter(Boolean);
     }
 
     // ── Génération des champs de mapping ──────────────────────────
     _renderMappingFields() {
       const container = this._root.getElementById("bpMappingFields");
       if (!container) return;
+      const dims    = this._getDims();
+      const mapping = this._props.feedMapping || {};
+      const hasDims = dims.length > 0;
+
       let currentGroup = null;
       let html = "";
+
+      // Message d'état
+      if (hasDims) {
+        html += `<div class="bp-map-info" style="background:#f0fdf4;border-color:#bbf7d0;color:#15803d;">
+          <strong>${dims.length} dimension(s) détectée(s)</strong> — sélectionnez dans les menus.
+        </div>`;
+      } else {
+        html += `<div class="bp-map-info">
+          Ajoutez d'abord les dimensions dans le panneau <strong>Données</strong>, puis revenez ici.
+        </div>`;
+      }
+
       FEED_LABELS.forEach(({ id, label, group, ph }) => {
         if (group !== currentGroup) {
           currentGroup = group;
           html += `<div class="bp-map-group-lbl">${group}</div>`;
         }
-        html += `
-          <div class="bp-map-row">
-            <span class="bp-map-lbl" title="${label}">${label}</span>
-            <input class="bp-map-input"
-                   data-feed-id="${id}"
-                   placeholder="${ph}"
-                   type="text"
-                   autocomplete="off"
-                   spellcheck="false" />
-          </div>`;
+        const curVal = mapping[id] || "";
+        if (hasDims) {
+          const opts = dims.map(d =>
+            `<option value="${d}" ${d === curVal ? "selected" : ""}>${d}</option>`
+          ).join("");
+          html += `
+            <div class="bp-map-row">
+              <span class="bp-map-lbl" title="${label}">${label}</span>
+              <select class="bp-map-input ${curVal ? 'filled' : ''}"
+                      data-feed-id="${id}">
+                <option value="">— choisir —</option>
+                ${opts}
+              </select>
+            </div>`;
+        } else {
+          html += `
+            <div class="bp-map-row">
+              <span class="bp-map-lbl" title="${label}">${label}</span>
+              <input class="bp-map-input ${curVal ? 'filled' : ''}"
+                     data-feed-id="${id}"
+                     placeholder="${ph}"
+                     type="text"
+                     autocomplete="off"
+                     spellcheck="false"
+                     value="${curVal}" />
+            </div>`;
+        }
       });
       container.innerHTML = html;
     }
@@ -379,19 +425,37 @@
         this._dispatch("showProjectName", e.target.checked);
       });
 
-      // Mapping inputs — dispatch groupé avec debounce
-      r.getElementById("bpMappingFields").addEventListener("input", (e) => {
-        const input = e.target.closest(".bp-map-input");
-        if (!input) return;
-        const feedId = input.dataset.feedId;
-        if (!feedId) return;
-        input.classList.toggle("filled", input.value.trim().length > 0);
-        this._debounce("map_" + feedId, 400, () => {
-          const newMap = Object.assign({}, this._props.feedMapping || {});
-          newMap[feedId] = input.value.trim();
-          this._props.feedMapping = newMap;
-          this._dispatch("feedMapping", newMap);
-        });
+      this._attachMappingListeners();
+    }
+
+    // ── Listeners du mapping (input ou select) ────────────────────
+    _attachMappingListeners() {
+      const container = this._root.getElementById("bpMappingFields");
+      if (!container) return;
+      // Supprime les anciens listeners en remplaçant le nœud
+      const fresh = container.cloneNode(true);
+      container.parentNode.replaceChild(fresh, container);
+      // Ré-attache
+      this._root.getElementById("bpMappingFields").addEventListener("input", (e) => {
+        this._onMappingChange(e);
+      });
+      this._root.getElementById("bpMappingFields").addEventListener("change", (e) => {
+        this._onMappingChange(e);
+      });
+    }
+
+    _onMappingChange(e) {
+      const el = e.target.closest(".bp-map-input");
+      if (!el) return;
+      const feedId = el.dataset.feedId;
+      if (!feedId) return;
+      const val = el.value.trim();
+      el.classList.toggle("filled", val.length > 0);
+      this._debounce("map_" + feedId, 300, () => {
+        const newMap = Object.assign({}, this._props.feedMapping || {});
+        newMap[feedId] = val;
+        this._props.feedMapping = newMap;
+        this._dispatch("feedMapping", newMap);
       });
     }
 
@@ -411,10 +475,10 @@
 
       const mapping = this._props.feedMapping || {};
       FEED_LABELS.forEach(({ id }) => {
-        const input = r.querySelector(`.bp-map-input[data-feed-id="${id}"]`);
-        if (!input || document.activeElement === input) return;
-        input.value = mapping[id] || "";
-        input.classList.toggle("filled", (mapping[id] || "").trim().length > 0);
+        const el = r.querySelector(`.bp-map-input[data-feed-id="${id}"]`);
+        if (!el || document.activeElement === el) return;
+        el.value = mapping[id] || "";
+        el.classList.toggle("filled", (mapping[id] || "").trim().length > 0);
       });
     }
 

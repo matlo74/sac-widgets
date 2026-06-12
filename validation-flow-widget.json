@@ -43,6 +43,11 @@
       "type": "string",
       "default": "{}",
       "description": "Mapping feedId → ID technique dimension SAC (configuré via le panel Générateur)"
+    },
+    "availableDims": {
+      "type": "string",
+      "default": "",
+      "description": "Liste des dimensions détectées automatiquement (séparées par |)"
     }
   },
   "dataBindings": {

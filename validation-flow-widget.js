@@ -475,7 +475,8 @@
         title:           "Flux de Validation",
         maxColumns:      3,
         showProjectName: true,
-        feedMapping:     {}
+        feedMapping:     {},
+        availableDims:   ""
       };
     }
 
@@ -617,6 +618,19 @@
 
       try {
         const db = this.dataBindings && this.dataBindings.getDataBinding("validationData");
+
+        // ── Met à jour availableDims pour le builder panel ─────────
+        if (db && db.metadata) {
+          const dimIndex = this._buildDimIndex(db.metadata);
+          const dimList  = Object.keys(dimIndex).join("|");
+          if (dimList !== this._props.availableDims) {
+            this._props.availableDims = dimList;
+            this.dispatchEvent(new CustomEvent("propertiesChanged", {
+              detail: { properties: { availableDims: dimList } }
+            }));
+          }
+        }
+
         if (db && Array.isArray(db.data) && db.data.length > 0) {
           const feedMapping = this._parseFeedMapping();
           const dimIndex    = this._buildDimIndex(db.metadata);
