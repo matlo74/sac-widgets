@@ -94,7 +94,8 @@
     respA7: "RespA7", respA8: "RespA8", respB1: "RespB1",
     statutA3: "StatutA3", statutA4: "StatutA4",
     statutA5: "StatutA5", statutA6: "StatutA6",
-    statutA7: "StatutA7", statutA8: "StatutA8"
+    statutA7: "StatutA7", statutA8: "StatutA8",
+    statutB1: "StatutB1"
   };
 
   /** Jeu de données fictif pour tester le rendu */
@@ -109,7 +110,7 @@
       RespA7: "SIMON.G",   RespA8: "LAURENT.H", RespB1: "MICHEL.I",
       StatutA3: "Validé",  StatutA4: "Validé",
       StatutA5: "En cours", StatutA6: "",
-      StatutA7: "",          StatutA8: ""
+      StatutA7: "",          StatutA8: "", StatutB1: ""
     },
     {
       NumeroDemande: "DEM-2024-002", StatutGlobal: "En attente",
@@ -120,7 +121,7 @@
       RespA5: "", RespA6: "", RespA7: "", RespA8: "", RespB1: "",
       StatutA3: "En cours", StatutA4: "",
       StatutA5: "",          StatutA6: "",
-      StatutA7: "",          StatutA8: ""
+      StatutA7: "",          StatutA8: "", StatutB1: ""
     },
     {
       NumeroDemande: "DEM-2024-003", StatutGlobal: "Validé",
@@ -132,7 +133,7 @@
       RespA7: "GAUTIER.T", RespA8: "PERRIN.U", RespB1: "LEGRAND.V",
       StatutA3: "Validé",  StatutA4: "Validé",
       StatutA5: "Validé",  StatutA6: "Validé",
-      StatutA7: "Validé",  StatutA8: "Validé"
+      StatutA7: "Validé",  StatutA8: "Validé", StatutB1: "Validé"
     },
     {
       NumeroDemande: "DEM-2024-004", StatutGlobal: "Rejeté",
@@ -144,7 +145,7 @@
       RespA7: "LEROY.Y",  RespA8: "",  RespB1: "",
       StatutA3: "Validé",   StatutA4: "Validé",
       StatutA5: "Validé",   StatutA6: "Validé",
-      StatutA7: "En cours", StatutA8: ""
+      StatutA7: "En cours", StatutA8: "", StatutB1: ""
     }
   ];
 
@@ -872,7 +873,7 @@
           A3: g("statutA3"), A4: g("statutA4"),
           A5: g("statutA5"), A6: g("statutA6"),
           A7: g("statutA7"), A8: g("statutA8"),
-          B1: null
+          B1: g("statutB1")
         };
 
         const globalColor = getStatusColor(stGlobal);
