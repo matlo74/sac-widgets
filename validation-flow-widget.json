@@ -1,6 +1,6 @@
 {
   "id": "com.emineo.validationFlowWidget",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "name": "Validation Flow Widget",
   "description": "Flux de validation en pipeline par demande. 3 bandes : en-tête, personnes, pipeline (Département › Section › Décanat › Rectorat).",
   "newInstancePrefix": "ValidationFlow",
@@ -11,14 +11,14 @@
     {
       "kind": "main",
       "tag": "validation-flow-widget",
-      "url": "https://matlo74.github.io/sac-widgets/validation-flow-widget.js?v=161",
+      "url": "https://matlo74.github.io/sac-widgets/validation-flow-widget.js?v=162",
       "integrity": "",
       "ignoreIntegrity": true
     },
     {
       "kind": "builder",
       "tag": "validation-flow-widget-builder",
-      "url": "https://matlo74.github.io/sac-widgets/validation-flow-widget-builder.js",
+      "url": "https://matlo74.github.io/sac-widgets/validation-flow-widget-builder.js?v=162",
       "integrity": "",
       "ignoreIntegrity": true
     }
