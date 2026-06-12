@@ -879,7 +879,7 @@
                 ${esc(getInitials(user))}
               </span>
               <div>
-                <div class="vfw-person-lbl">Utilisateur</div>
+                <div class="vfw-person-lbl">Demande chez l'utilisateur</div>
                 <div class="vfw-person-name">${esc(user)}</div>
               </div>
             </div>
@@ -1074,7 +1074,7 @@
                 ${esc(getInitials(user))}
               </span>
               <div>
-                <div class="vfw-person-lbl">Utilisateur</div>
+                <div class="vfw-person-lbl">Demande chez l'utilisateur</div>
                 <div class="vfw-person-name">${esc(user)}</div>
               </div>
             </div>
