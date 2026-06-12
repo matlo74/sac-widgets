@@ -959,16 +959,17 @@
       const status      = mapped || deriveStepStatus(stepId, currentStep, resp);
       const cfg         = STEP_CFG[status];
       const displayName = (resp && resp !== "—") ? resp : "";
-      const displayLbl  = explicitStatut || cfg.lb;
+      const displayLbl  = explicitStatut ? explicitStatut : "";
       const pulseClass  = cfg.pulse ? " pulse" : "";
 
       return /* html */`
         <div class="vfw-sbox" style="background:${cfg.bg};border:1px ${cfg.bd};">
           <div class="vfw-sbox-code">${esc(stepId)} · ${STEP_LABEL[stepId]}</div>
+          ${displayLbl ? `
           <div class="vfw-sbox-st">
             <span class="vfw-sbox-dot${pulseClass}" style="background:${cfg.dot};"></span>
             <span class="vfw-sbox-lb" style="color:${cfg.tx};">${esc(displayLbl)}</span>
-          </div>
+          </div>` : ""}
           ${displayName ? `<div class="vfw-sbox-resp" title="${esc(displayName)}">${esc(displayName)}</div>` : ""}
         </div>`;
     }
