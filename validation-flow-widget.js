@@ -63,8 +63,13 @@
   /** Ordre canonique des étapes d'approbation */
   const STEP_ORDER = ["A3", "A4", "A5", "A6", "A7", "A8", "B1"];
 
-  /** Libellés courts affichés dans les boîtes d'étape */
-  const STEP_LABEL = { A3:"Ctrl", A4:"Val", A5:"Ctrl", A6:"Val", A7:"Ctrl", A8:"Val", B1:"Val" };
+  /** Libellés affichés dans les boîtes d'étape */
+  const STEP_LABEL = {
+    A3: "Contrôle",   A4: "Validation",
+    A5: "Contrôle",   A6: "Validation",
+    A7: "Contrôle",   A8: "Validation",
+    B1: "Validation"
+  };
 
   /** Groupes d'approbation */
   const GROUPS = [
@@ -386,14 +391,14 @@
       /* Groupe d'étapes (ex. Département = A3+A4) */
       .vfw-grp {
         flex: 2;
-        min-width: 128px;
+        min-width: 160px;
         display: flex;
         flex-direction: column;
         gap: 4px;
       }
       .vfw-grp.single {
         flex: 1;
-        min-width: 64px;
+        min-width: 80px;
       }
       .vfw-grp-lbl {
         font-size: 10px;
@@ -912,10 +917,10 @@
      * @returns {string} HTML de la boîte
      */
     _renderStepBox(stepId, resp, currentStep) {
-      const status = deriveStepStatus(stepId, currentStep, resp);
-      const cfg    = STEP_CFG[status];
-      const firstName = (resp && resp !== "—") ? (resp.split(" ")[0] || "") : "";
-      const pulseClass = cfg.pulse ? " pulse" : "";
+      const status      = deriveStepStatus(stepId, currentStep, resp);
+      const cfg         = STEP_CFG[status];
+      const displayName = (resp && resp !== "—") ? resp : "";
+      const pulseClass  = cfg.pulse ? " pulse" : "";
 
       return /* html */`
         <div class="vfw-sbox" style="background:${cfg.bg};border:1px ${cfg.bd};">
@@ -924,7 +929,7 @@
             <span class="vfw-sbox-dot${pulseClass}" style="background:${cfg.dot};"></span>
             <span class="vfw-sbox-lb" style="color:${cfg.tx};">${cfg.lb}</span>
           </div>
-          ${firstName ? `<div class="vfw-sbox-resp">${esc(firstName)}</div>` : ""}
+          ${displayName ? `<div class="vfw-sbox-resp" title="${esc(displayName)}">${esc(displayName)}</div>` : ""}
         </div>`;
     }
 
