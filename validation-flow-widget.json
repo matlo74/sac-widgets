@@ -67,8 +67,11 @@
     }
   },
   "methods": {
+    "loadFromResultSet": {
+      "description": "Charge directement le result set d'une table SAC. Appel OSE (une ligne) : ValidationFlow_1.loadFromResultSet(Table_1.getDataSource().getResultSet()). Plus besoin de construire un JSON."
+    },
     "setRawData": {
-      "description": "Injecte un tableau JSON de demandes dans le widget et déclenche le re-rendu. Appel OSE : ValidationFlow_1.setRawData(JSON.stringify(rows))"
+      "description": "Injecte un tableau JSON de demandes dans le widget. Appel OSE : ValidationFlow_1.setRawData(JSON.stringify(rows)). Méthode de fallback — préférer loadFromResultSet."
     }
   },
   "events": {

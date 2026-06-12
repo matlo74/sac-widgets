@@ -928,6 +928,62 @@
         </div>`;
     }
 
+    // ── Méthode publique OSE : bridge Table → widget ──────────────
+    // Usage OSE (une seule ligne) :
+    //   ValidationFlow_1.loadFromResultSet(Table_1.getDataSource().getResultSet())
+    //
+    // Plus besoin de construire un JSON manuellement dans le script SAC.
+    // Toute la logique de parsing est ici, en JavaScript natif.
+    loadFromResultSet(resultSet) {
+      if (!Array.isArray(resultSet) || resultSet.length === 0) {
+        console.warn("[ValidationFlow] loadFromResultSet : resultSet vide ou invalide");
+        return;
+      }
+
+      const feedMapping = this._parseFeedMapping();
+      const demandeKey  = feedMapping.demande || "NumeroDemande";
+
+      // Lit la valeur d'une cellule du result set SAC (objet proxy non-sérialisable)
+      const cellVal = (cell, key) => {
+        if (!key) return "";
+        const c = cell[key];
+        if (c === undefined || c === null) return "";
+        if (c.id          !== undefined) return c.id;
+        if (c.description !== undefined) return c.description;
+        return String(c);
+      };
+
+      const rows = [];
+      for (let i = 0; i < resultSet.length; i++) {
+        const cell = resultSet[i];
+        const id   = cellVal(cell, demandeKey);
+        // Ignorer les lignes vides et les membres totaux SAC
+        if (!id || id === "#" || id === "TOTAL") continue;
+        const row = {};
+        for (const role in feedMapping) {
+          row[feedMapping[role]] = cellVal(cell, feedMapping[role]);
+        }
+        rows.push(row);
+      }
+
+      if (rows.length === 0) {
+        console.warn("[ValidationFlow] loadFromResultSet : aucune ligne valide");
+        return;
+      }
+
+      const r    = this._root;
+      const grid = r.getElementById("vfwGrid");
+      r.getElementById("vfwTitle").textContent = this._props.title || "Flux de Validation";
+      const cols = Math.min(Math.max(parseInt(this._props.maxColumns, 10) || 3, 1), 5);
+      grid.style.setProperty("--cols", cols);
+
+      this._renderCardsByMapping(grid, rows, feedMapping, {});
+      r.getElementById("vfwCount").textContent =
+        rows.length + " demande" + (rows.length > 1 ? "s" : "");
+
+      console.info("[ValidationFlow] loadFromResultSet : " + rows.length + " demande(s) rendues");
+    }
+
     // ── Rendu de toutes les cards ──────────────────────────────────
     _renderCards(grid, rows, fieldMap) {
       grid.innerHTML = "";
