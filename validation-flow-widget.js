@@ -546,33 +546,49 @@
       return map;
     }
 
-    // ── Lit la valeur d'une dimension via son ID technique ─────────
+    // ── Normalise un ID pour comparaison souple ───────────────────
+    _normId(s) {
+      return String(s || "").toLowerCase().replace(/[\s_\-\.]/g, "");
+    }
+
+    // ── Lit la valeur d'une dimension/propriété via son ID ─────────
     _getValueByDimId(row, dimId, dimIndex) {
       if (!dimId) return null;
+      const norm = this._normId(dimId);
 
-      // ── Via l'index de métadonnées (méthode principale) ──────────
+      // 1. Via l'index de métadonnées (méthode principale) ──────────
       if (dimIndex) {
-        const idx = dimIndex[dimId];
+        // Correspondance exacte
+        let idx = dimIndex[dimId];
+        if (idx === undefined) {
+          // Correspondance normalisée (ignore casse, espaces, tirets)
+          for (const [k, v] of Object.entries(dimIndex)) {
+            if (this._normId(k) === norm) { idx = v; break; }
+          }
+        }
         if (idx !== undefined) {
           const cell = row[`dimensions_${idx}`];
-          if (cell) return cell.label || cell.id || null;
+          if (cell) return cell.label || cell.description || cell.id || null;
         }
       }
 
-      // ── Fallbacks (si métadonnées non disponibles) ───────────────
-      // 1. Clé exacte (certaines versions SAC)
+      // 2. Clé exacte dans la row (certaines versions SAC)
       const c1 = row[dimId];
       if (c1 != null) return c1.label || c1.description || c1.id || String(c1) || null;
 
-      // 2. Clé avec suffixe _0
-      const c2 = row[dimId + "_0"];
-      if (c2 != null) return c2.label || c2.description || c2.id || String(c2) || null;
+      // 3. Clé normalisée dans la row
+      for (const key of Object.keys(row)) {
+        if (this._normId(key) === norm) {
+          const c = row[key];
+          if (c != null) return c.label || c.description || c.id || String(c) || null;
+        }
+      }
 
-      // 3. Scan de toutes les clés dimensions_N (dernier recours)
+      // 4. Scan dimensions_N — cherche une cellule dont l'id ou label correspond
       for (const key of Object.keys(row)) {
         if (!key.startsWith("dimensions_")) continue;
         const cell = row[key];
-        if (cell && (cell.id === dimId || cell.label === dimId)) {
+        if (cell && (this._normId(cell.id) === norm || this._normId(cell.label) === norm)) {
           return cell.label || cell.id || null;
         }
       }
