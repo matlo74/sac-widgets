@@ -413,7 +413,7 @@
 
       /* ── Bande 3 : Pipeline d'approbation ───────────────────────── */
       .vfw-band-pipeline {
-        padding: 10px 14px 12px;
+        padding: 12px 14px 14px;
         display: flex;
         align-items: flex-start;
         gap: 5px;
@@ -449,26 +449,27 @@
       .vfw-sbox {
         flex: 1;
         min-width: 0;
-        border-radius: 6px;
-        padding: 5px 6px;
+        border-radius: 7px;
+        padding: 8px 9px;
         overflow: hidden;
       }
       .vfw-sbox-code {
-        font-size: 10px;
+        font-size: 11px;
         color: #94a3b8;
         font-weight: 600;
         white-space: normal;
-        line-height: 1.3;
+        line-height: 1.4;
+        margin-bottom: 3px;
       }
       .vfw-sbox-st {
         display: flex;
         align-items: center;
-        gap: 3px;
-        margin: 2px 0;
+        gap: 4px;
+        margin: 3px 0;
       }
       .vfw-sbox-dot {
-        width: 5px;
-        height: 5px;
+        width: 6px;
+        height: 6px;
         border-radius: 50%;
         flex-shrink: 0;
         display: inline-block;
@@ -477,18 +478,19 @@
         animation: vfw-pulse 1.6s ease-in-out infinite;
       }
       .vfw-sbox-lb {
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 600;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
       .vfw-sbox-resp {
-        font-size: 11px;
+        font-size: 12px;
         color: #64748b;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        margin-top: 2px;
       }
 
       /* Flèche entre groupes */
