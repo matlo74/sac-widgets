@@ -1,6 +1,6 @@
 /**
  * Validation Flow Widget — SAP Analytics Cloud Custom Widget
- * Version : 1.2.0
+ * Version : 1.4.0
  * Vendor  : emineo
  *
  * Affiche un flux de validation en pipeline pour chaque demande.
@@ -72,6 +72,60 @@
     { label: "Section",     steps: ["A5", "A6"] },
     { label: "Décanat",     steps: ["A7", "A8"] },
     { label: "Rectorat",    steps: ["B1"]        }
+  ];
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // DONNÉES DE DÉMONSTRATION
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /** Mapping utilisé quand demoMode = true */
+  const DEMO_FEED_MAPPING = {
+    demande: "NumeroDemande", statutGlobal: "StatutGlobal",
+    currentUser: "CurrentUser", nomProjet: "NomProjet",
+    responsableProjet: "ResponsableProjet", statutAction: "StatutAction",
+    responsableAction: "ResponsableAction",
+    respA3: "RespA3", respA4: "RespA4",
+    respA5: "RespA5", respA6: "RespA6",
+    respA7: "RespA7", respA8: "RespA8", respB1: "RespB1"
+  };
+
+  /** Jeu de données fictif pour tester le rendu */
+  const DEMO_DATA = [
+    {
+      NumeroDemande: "DEM-2024-001", StatutGlobal: "En cours",
+      CurrentUser: "MARTIN.A", NomProjet: "Rénovation Bât. A",
+      ResponsableProjet: "DUPONT.B", StatutAction: "A5",
+      ResponsableAction: "BERTRAND.E",
+      RespA3: "LEBLANC.C", RespA4: "DURAND.D",
+      RespA5: "BERTRAND.E", RespA6: "MOREAU.F",
+      RespA7: "SIMON.G",   RespA8: "LAURENT.H", RespB1: "MICHEL.I"
+    },
+    {
+      NumeroDemande: "DEM-2024-002", StatutGlobal: "En attente",
+      CurrentUser: "GARCIA.J", NomProjet: "Équipement Lab",
+      ResponsableProjet: "ROUX.K", StatutAction: "A3",
+      ResponsableAction: "VINCENT.L",
+      RespA3: "VINCENT.L", RespA4: "FAURE.M",
+      RespA5: "", RespA6: "", RespA7: "", RespA8: "", RespB1: ""
+    },
+    {
+      NumeroDemande: "DEM-2024-003", StatutGlobal: "Validé",
+      CurrentUser: "HENRY.N", NomProjet: "Mobilier Bureau",
+      ResponsableProjet: "GIRARD.O", StatutAction: "B1",
+      ResponsableAction: "LEGRAND.V",
+      RespA3: "ROGER.P",   RespA4: "MOREL.Q",
+      RespA5: "CLEMENT.R", RespA6: "RENAUD.S",
+      RespA7: "GAUTIER.T", RespA8: "PERRIN.U", RespB1: "LEGRAND.V"
+    },
+    {
+      NumeroDemande: "DEM-2024-004", StatutGlobal: "Rejeté",
+      CurrentUser: "PETIT.W", NomProjet: "Serveurs Salle Info",
+      ResponsableProjet: "BLANC.X", StatutAction: "A7",
+      ResponsableAction: "LEROY.Y",
+      RespA3: "ADAM.Z",   RespA4: "BOYER.1",
+      RespA5: "COLIN.2",  RespA6: "DENIS.3",
+      RespA7: "LEROY.Y",  RespA8: "",  RespB1: ""
+    }
   ];
 
   /** Palette de couleurs pour les avatars (déterministe via hash du nom) */
@@ -455,8 +509,8 @@
             <rect x="9" y="3" width="6" height="4" rx="1"/>
             <path d="M9 12h6M9 16h4"/>
           </svg>
-          <p>Liez un modèle SAC pour afficher les demandes</p>
-          <small>Glissez les 14 dimensions sur les feeds de données</small>
+          <p>Aucune donnée à afficher</p>
+          <small>Activez le mode démo ou collez un JSON dans le Générateur</small>
         </div>
       </div>
     </div>
@@ -476,7 +530,8 @@
         maxColumns:      3,
         showProjectName: true,
         feedMapping:     {},
-        availableDims:   ""
+        rawData:         "[]",
+        demoMode:        false
       };
     }
 
@@ -513,6 +568,12 @@
 
     get feedMapping()      { return this._props.feedMapping; }
     set feedMapping(v)     { this._set("feedMapping", v); }
+
+    get rawData()          { return this._props.rawData; }
+    set rawData(v)         { this._set("rawData", v); }
+
+    get demoMode()         { return this._props.demoMode; }
+    set demoMode(v)        { this._set("demoMode", v); }
 
     _set(key, value) {
       this._props[key] = value;
@@ -608,50 +669,64 @@
 
     // ── Render principal ───────────────────────────────────────────
     _render() {
-      const r = this._root;
+      const r    = this._root;
+      const grid = r.getElementById("vfwGrid");
 
       r.getElementById("vfwTitle").textContent =
         this._props.title || "Flux de Validation";
-
       const cols = Math.min(Math.max(parseInt(this._props.maxColumns, 10) || 3, 1), 5);
-      r.getElementById("vfwGrid").style.setProperty("--cols", cols);
+      grid.style.setProperty("--cols", cols);
 
+      // ── 1. Mode démo ────────────────────────────────────────────
+      if (this._props.demoMode) {
+        this._renderCardsByMapping(grid, DEMO_DATA, DEMO_FEED_MAPPING, {});
+        r.getElementById("vfwCount").textContent =
+          `${DEMO_DATA.length} demande(s) · DÉMO`;
+        return;
+      }
+
+      // ── 2. rawData injecté (JSON depuis le builder ou un script OSE) ──
       try {
-        const db = this.dataBindings && this.dataBindings.getDataBinding("validationData");
-
-        // ── Met à jour availableDims pour le builder panel ─────────
-        if (db && db.metadata) {
-          const dimIndex = this._buildDimIndex(db.metadata);
-          const dimList  = Object.keys(dimIndex).join("|");
-          if (dimList !== this._props.availableDims) {
-            this._props.availableDims = dimList;
-            this.dispatchEvent(new CustomEvent("propertiesChanged", {
-              detail: { properties: { availableDims: dimList } }
-            }));
-          }
+        const rawStr = this._props.rawData || "[]";
+        const parsed = JSON.parse(rawStr);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const feedMapping = this._parseFeedMapping();
+          console.info("[ValidationFlow] rawData :", parsed.length, "ligne(s)",
+                       "feedMapping :", feedMapping);
+          this._renderCardsByMapping(grid, parsed, feedMapping, {});
+          const n = parsed.length;
+          r.getElementById("vfwCount").textContent =
+            `${n} demande${n > 1 ? "s" : ""}`;
+          return;
         }
+      } catch (e) {
+        console.warn("[ValidationFlow] rawData invalide :", e.message);
+      }
 
+      // ── 3. dataBindings SAC (fallback — fonctionne en Analytics Designer) ──
+      try {
+        const db = this.dataBindings &&
+                   this.dataBindings.getDataBinding("validationData");
         if (db && Array.isArray(db.data) && db.data.length > 0) {
           const feedMapping = this._parseFeedMapping();
           const dimIndex    = this._buildDimIndex(db.metadata);
-          console.info("[ValidationFlow] dimIndex :", dimIndex,
-                       "feedMapping :", feedMapping,
-                       "1er row :", Object.keys(db.data[0] || {}));
-          this._renderCardsByMapping(r.getElementById("vfwGrid"), db.data, feedMapping, dimIndex);
+          console.info("[ValidationFlow] dataBindings :", db.data.length, "ligne(s)");
+          this._renderCardsByMapping(grid, db.data, feedMapping, dimIndex);
           const n = db.data.length;
           r.getElementById("vfwCount").textContent =
             `${n} demande${n > 1 ? "s" : ""}`;
           return;
         }
         if (db) {
-          console.info("[ValidationFlow] binding connecté mais data vide.",
-            "metadata :", db.metadata);
+          console.info("[ValidationFlow] binding connecté, data vide.",
+                       "OSE → utilisez rawData ou activez demoMode.",
+                       "metadata :", db.metadata);
         }
       } catch (err) {
         console.warn("[ValidationFlowWidget] Erreur data binding :", err);
       }
 
-      this._renderEmpty(r.getElementById("vfwGrid"));
+      this._renderEmpty(grid);
       r.getElementById("vfwCount").textContent = "0 demande";
     }
 
@@ -665,8 +740,8 @@
             <rect x="9" y="3" width="6" height="4" rx="1"/>
             <path d="M9 12h6M9 16h4"/>
           </svg>
-          <p>Liez un modèle SAC pour afficher les demandes</p>
-          <small>Glissez les 14 dimensions sur les feeds de données</small>
+          <p>Aucune donnée à afficher</p>
+          <small>Activez le mode démo ou collez un JSON dans le Générateur</small>
         </div>`;
     }
 
