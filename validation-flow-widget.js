@@ -1,6 +1,6 @@
 /**
  * Validation Flow Widget — SAP Analytics Cloud Custom Widget
- * Version : 1.5.0
+ * Version : 1.6.0
  * Vendor  : emineo
  *
  * Affiche un flux de validation en pipeline pour chaque demande.
@@ -714,6 +714,62 @@
         console.warn("[ValidationFlow] rawData invalide :", e.message);
       }
 
+      // ── 2.5. Lecture via getDataSource().getResultSet() (OSE, mode table) ───────
+      // Connecte le modèle FLUX VALIDATION au widget (panel Données en OSE).
+      // Le widget appelle getResultSet() sur le datasource — identique à lire une table :
+      // toutes les dimensions sont disponibles comme colonnes (NumeroDemande, Category…).
+      // Aucun script OSE nécessaire.
+      try {
+        const _db = this.dataBindings &&
+                    this.dataBindings.getDataBinding("validationData");
+        if (_db) {
+          const _ds = typeof _db.getDataSource === "function"
+            ? _db.getDataSource() : null;
+          if (_ds) {
+            const _rs = _ds.getResultSet();
+            if (Array.isArray(_rs) && _rs.length > 0) {
+              const feedMapping = this._parseFeedMapping();
+              const demandeKey  = feedMapping.demande || "NumeroDemande";
+
+              // Lit la valeur d'une cellule du result set (proxy SAC)
+              // c.id = valeur technique, c.description = libellé affiché
+              const _cv = function(cell, key) {
+                if (!key) return "";
+                var c = cell[key];
+                if (c === undefined || c === null) return "";
+                if (c.id          !== undefined)   return c.id;
+                if (c.description !== undefined)   return c.description;
+                return String(c);
+              };
+
+              const rows = [];
+              for (var _ri = 0; _ri < _rs.length; _ri++) {
+                var _cell = _rs[_ri];
+                var _id   = _cv(_cell, demandeKey);
+                // Ignorer les lignes vides et les membres totaux SAC
+                if (!_id || _id === "#" || _id === "TOTAL") continue;
+                var _row = {};
+                for (var _role in feedMapping) {
+                  _row[feedMapping[_role]] = _cv(_cell, feedMapping[_role]);
+                }
+                rows.push(_row);
+              }
+
+              if (rows.length > 0) {
+                console.info("[ValidationFlow] ResultSet : " + rows.length + " ligne(s)");
+                this._renderCardsByMapping(grid, rows, feedMapping, {});
+                var _n = rows.length;
+                r.getElementById("vfwCount").textContent =
+                  _n + " demande" + (_n > 1 ? "s" : "") + " · table";
+                return;
+              }
+            }
+          }
+        }
+      } catch (_rsErr) {
+        console.warn("[ValidationFlow] getResultSet : " + _rsErr.message);
+      }
+
       // ── 3. dataBindings SAC (fallback — fonctionne en Analytics Designer) ──
       try {
         const db = this.dataBindings &&
@@ -752,7 +808,7 @@
             <path d="M9 12h6M9 16h4"/>
           </svg>
           <p>Aucune donnée à afficher</p>
-          <small>Activez le mode démo ou collez un JSON dans le Générateur</small>
+          <small>Connectez le modèle via « Données » du widget, activez le mode démo, ou collez un JSON dans le Générateur</small>
         </div>`;
     }
 

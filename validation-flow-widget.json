@@ -1,6 +1,6 @@
 {
   "id": "com.emineo.validationFlowWidget",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "name": "Validation Flow Widget",
   "description": "Flux de validation en pipeline par demande. 3 bandes : en-tête, personnes, pipeline (Département › Section › Décanat › Rectorat).",
   "newInstancePrefix": "ValidationFlow",
@@ -47,7 +47,7 @@
     "rawData": {
       "type": "string",
       "default": "[]",
-      "description": "Tableau JSON de demandes. Clés = IDs techniques SAC. Injecté manuellement ou via script OSE."
+      "description": "Tableau JSON de demandes (fallback). Clés = IDs techniques SAC. Utilisé uniquement si la connexion directe au modèle (dataBindings) ne renvoie pas de données."
     },
     "demoMode": {
       "type": "boolean",
