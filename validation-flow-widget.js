@@ -91,7 +91,10 @@
     responsableAction: "ResponsableAction",
     respA3: "RespA3", respA4: "RespA4",
     respA5: "RespA5", respA6: "RespA6",
-    respA7: "RespA7", respA8: "RespA8", respB1: "RespB1"
+    respA7: "RespA7", respA8: "RespA8", respB1: "RespB1",
+    statutA3: "StatutA3", statutA4: "StatutA4",
+    statutA5: "StatutA5", statutA6: "StatutA6",
+    statutA7: "StatutA7", statutA8: "StatutA8"
   };
 
   /** Jeu de données fictif pour tester le rendu */
@@ -103,7 +106,10 @@
       ResponsableAction: "BERTRAND.E",
       RespA3: "LEBLANC.C", RespA4: "DURAND.D",
       RespA5: "BERTRAND.E", RespA6: "MOREAU.F",
-      RespA7: "SIMON.G",   RespA8: "LAURENT.H", RespB1: "MICHEL.I"
+      RespA7: "SIMON.G",   RespA8: "LAURENT.H", RespB1: "MICHEL.I",
+      StatutA3: "Validé",  StatutA4: "Validé",
+      StatutA5: "En cours", StatutA6: "",
+      StatutA7: "",          StatutA8: ""
     },
     {
       NumeroDemande: "DEM-2024-002", StatutGlobal: "En attente",
@@ -111,7 +117,10 @@
       ResponsableProjet: "ROUX.K", StatutAction: "A3",
       ResponsableAction: "VINCENT.L",
       RespA3: "VINCENT.L", RespA4: "FAURE.M",
-      RespA5: "", RespA6: "", RespA7: "", RespA8: "", RespB1: ""
+      RespA5: "", RespA6: "", RespA7: "", RespA8: "", RespB1: "",
+      StatutA3: "En cours", StatutA4: "",
+      StatutA5: "",          StatutA6: "",
+      StatutA7: "",          StatutA8: ""
     },
     {
       NumeroDemande: "DEM-2024-003", StatutGlobal: "Validé",
@@ -120,7 +129,10 @@
       ResponsableAction: "LEGRAND.V",
       RespA3: "ROGER.P",   RespA4: "MOREL.Q",
       RespA5: "CLEMENT.R", RespA6: "RENAUD.S",
-      RespA7: "GAUTIER.T", RespA8: "PERRIN.U", RespB1: "LEGRAND.V"
+      RespA7: "GAUTIER.T", RespA8: "PERRIN.U", RespB1: "LEGRAND.V",
+      StatutA3: "Validé",  StatutA4: "Validé",
+      StatutA5: "Validé",  StatutA6: "Validé",
+      StatutA7: "Validé",  StatutA8: "Validé"
     },
     {
       NumeroDemande: "DEM-2024-004", StatutGlobal: "Rejeté",
@@ -129,7 +141,10 @@
       ResponsableAction: "LEROY.Y",
       RespA3: "ADAM.Z",   RespA4: "BOYER.1",
       RespA5: "COLIN.2",  RespA6: "DENIS.3",
-      RespA7: "LEROY.Y",  RespA8: "",  RespB1: ""
+      RespA7: "LEROY.Y",  RespA8: "",  RespB1: "",
+      StatutA3: "Validé",   StatutA4: "Validé",
+      StatutA5: "Validé",   StatutA6: "Validé",
+      StatutA7: "En cours", StatutA8: ""
     }
   ];
 
@@ -166,6 +181,22 @@
       hash = (hash * 31 + name.charCodeAt(i)) & 0xffffffff;
     }
     return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+  }
+
+  /**
+   * Convertit une valeur de statut SAC en clé STEP_CFG.
+   * Retourne null si la valeur est vide/inconnue (→ dérivation automatique en fallback).
+   */
+  function mapStatutToStepKey(statut) {
+    if (!statut) return null;
+    const s = statut.toLowerCase().trim();
+    if (s === "validé"    || s === "valide"  ||
+        s === "approuvé"  || s === "terminé" ||
+        s === "complété"  || s === "clôturé") return "valide";
+    if (s === "en cours"  || s === "encours") return "encours";
+    if (s === "en attente"|| s === "attente" ||
+        s === "soumis"    || s === "nouveau") return "attente";
+    return null;
   }
 
   /** Échappe les caractères HTML (prévention XSS) */
@@ -837,6 +868,12 @@
           A7: g("respA7"), A8: g("respA8"),
           B1: g("respB1")
         };
+        const statutSteps = {
+          A3: g("statutA3"), A4: g("statutA4"),
+          A5: g("statutA5"), A6: g("statutA6"),
+          A7: g("statutA7"), A8: g("statutA8"),
+          B1: null
+        };
 
         const globalColor = getStatusColor(stGlobal);
         const badgeBg     = globalColor + "1F";
@@ -846,7 +883,7 @@
 
         const pipelineHTML = GROUPS.map((grp, i) => {
           const stepsHtml = grp.steps
-            .map(sid => this._renderStepBox(sid, respSteps[sid], curStep))
+            .map(sid => this._renderStepBox(sid, respSteps[sid], curStep, statutSteps[sid]))
             .join("");
           const grpClass = grp.steps.length === 1 ? "vfw-grp single" : "vfw-grp";
           const arrow    = i < GROUPS.length - 1 ? '<div class="vfw-arrow">›</div>' : "";
@@ -917,10 +954,12 @@
      * @param {string}      currentStep  Code de l'étape active
      * @returns {string} HTML de la boîte
      */
-    _renderStepBox(stepId, resp, currentStep) {
-      const status      = deriveStepStatus(stepId, currentStep, resp);
+    _renderStepBox(stepId, resp, currentStep, explicitStatut) {
+      const mapped      = mapStatutToStepKey(explicitStatut);
+      const status      = mapped || deriveStepStatus(stepId, currentStep, resp);
       const cfg         = STEP_CFG[status];
       const displayName = (resp && resp !== "—") ? resp : "";
+      const displayLbl  = explicitStatut || cfg.lb;
       const pulseClass  = cfg.pulse ? " pulse" : "";
 
       return /* html */`
@@ -928,7 +967,7 @@
           <div class="vfw-sbox-code">${esc(stepId)} · ${STEP_LABEL[stepId]}</div>
           <div class="vfw-sbox-st">
             <span class="vfw-sbox-dot${pulseClass}" style="background:${cfg.dot};"></span>
-            <span class="vfw-sbox-lb" style="color:${cfg.tx};">${cfg.lb}</span>
+            <span class="vfw-sbox-lb" style="color:${cfg.tx};">${esc(displayLbl)}</span>
           </div>
           ${displayName ? `<div class="vfw-sbox-resp" title="${esc(displayName)}">${esc(displayName)}</div>` : ""}
         </div>`;
