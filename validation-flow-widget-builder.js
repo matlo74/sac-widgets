@@ -38,7 +38,8 @@
     { id: "statutA5", label: "A5 · Statut Ctrl Section",  group: "Statuts approbation", ph: "ex: NumeroDemande.STATUT_A5" },
     { id: "statutA6", label: "A6 · Statut Val Section",   group: "Statuts approbation", ph: "ex: NumeroDemande.STATUT_A6" },
     { id: "statutA7", label: "A7 · Statut Ctrl Décanat",  group: "Statuts approbation", ph: "ex: NumeroDemande.STATUT_A7" },
-    { id: "statutA8", label: "A8 · Statut Val Décanat",   group: "Statuts approbation", ph: "ex: NumeroDemande.STATUT_A8" }
+    { id: "statutA8", label: "A8 · Statut Val Décanat",   group: "Statuts approbation", ph: "ex: NumeroDemande.STATUT_A8" },
+    { id: "statutB1", label: "B1 · Statut Val Rectorat",  group: "Statuts approbation", ph: "ex: NumeroDemande.STATUT_B1" }
   ];
 
   // ─────────────────────────────────────────────────────────────────────────
