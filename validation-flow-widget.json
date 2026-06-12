@@ -1,6 +1,6 @@
 {
   "id": "com.emineo.validationFlowWidget",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "name": "Validation Flow Widget",
   "description": "Flux de validation en pipeline par demande. 3 bandes : en-tête, personnes, pipeline (Département › Section › Décanat › Rectorat).",
   "newInstancePrefix": "ValidationFlow",
@@ -44,10 +44,15 @@
       "default": "{}",
       "description": "Mapping feedId → ID technique dimension SAC (configuré via le panel Générateur)"
     },
-    "availableDims": {
+    "rawData": {
       "type": "string",
-      "default": "",
-      "description": "Liste des dimensions détectées automatiquement (séparées par |)"
+      "default": "[]",
+      "description": "Tableau JSON de demandes. Clés = IDs techniques SAC. Injecté manuellement ou via script OSE."
+    },
+    "demoMode": {
+      "type": "boolean",
+      "default": false,
+      "description": "Affiche des données fictives pour tester le rendu du widget"
     }
   },
   "dataBindings": {
