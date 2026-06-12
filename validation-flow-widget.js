@@ -65,10 +65,10 @@
 
   /** Libellés affichés dans les boîtes d'étape */
   const STEP_LABEL = {
-    A3: "Contrôle",   A4: "Validation",
-    A5: "Contrôle",   A6: "Validation",
-    A7: "Contrôle",   A8: "Validation",
-    B1: "Validation"
+    A3: "Contrôle Département",   A4: "Validation Département",
+    A5: "Contrôle Section",       A6: "Validation Section",
+    A7: "Contrôle Décanat",       A8: "Validation Décanat",
+    B1: "Validation Rectorat"
   };
 
   /** Groupes d'approbation */
@@ -391,14 +391,14 @@
       /* Groupe d'étapes (ex. Département = A3+A4) */
       .vfw-grp {
         flex: 2;
-        min-width: 160px;
+        min-width: 190px;
         display: flex;
         flex-direction: column;
         gap: 4px;
       }
       .vfw-grp.single {
         flex: 1;
-        min-width: 80px;
+        min-width: 95px;
       }
       .vfw-grp-lbl {
         font-size: 10px;
@@ -425,7 +425,8 @@
         font-size: 10px;
         color: #94a3b8;
         font-weight: 600;
-        white-space: nowrap;
+        white-space: normal;
+        line-height: 1.3;
       }
       .vfw-sbox-st {
         display: flex;
