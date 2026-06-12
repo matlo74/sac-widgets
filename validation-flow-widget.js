@@ -1,6 +1,6 @@
 /**
  * Validation Flow Widget — SAP Analytics Cloud Custom Widget
- * Version : 1.4.0
+ * Version : 1.5.0
  * Vendor  : emineo
  *
  * Affiche un flux de validation en pipeline pour chaque demande.
@@ -574,6 +574,17 @@
 
     get demoMode()         { return this._props.demoMode; }
     set demoMode(v)        { this._set("demoMode", v); }
+
+    // ── Méthode publique appelable depuis un script SAC OSE ────────
+    // Syntaxe OSE : ValidationFlow_1.setRawData(JSON.stringify(rows))
+    // rows = tableau d'objets { "CléTechnique": "valeur", ... }
+    setRawData(jsonData) {
+      const str = typeof jsonData === "string"
+        ? jsonData
+        : JSON.stringify(jsonData || []);
+      this._props.rawData = str;
+      this._render();
+    }
 
     _set(key, value) {
       this._props[key] = value;

@@ -1,6 +1,6 @@
 {
   "id": "com.emineo.validationFlowWidget",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "name": "Validation Flow Widget",
   "description": "Flux de validation en pipeline par demande. 3 bandes : en-tête, personnes, pipeline (Département › Section › Décanat › Rectorat).",
   "newInstancePrefix": "ValidationFlow",
@@ -66,7 +66,11 @@
       ]
     }
   },
-  "methods": {},
+  "methods": {
+    "setRawData": {
+      "description": "Injecte un tableau JSON de demandes dans le widget et déclenche le re-rendu. Appel OSE : ValidationFlow_1.setRawData(JSON.stringify(rows))"
+    }
+  },
   "events": {
     "onCardClick": {
       "description": "Déclenché lors du clic sur une card de demande"
