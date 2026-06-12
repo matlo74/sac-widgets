@@ -1,6 +1,6 @@
 {
   "id": "com.emineo.validationFlowWidget",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "name": "Validation Flow Widget",
   "description": "Flux de validation en pipeline par demande. 3 bandes : en-tête, personnes, pipeline (Département › Section › Décanat › Rectorat).",
   "newInstancePrefix": "ValidationFlow",
@@ -49,73 +49,8 @@
     "validationData": {
       "feeds": [
         {
-          "id": "demande",
-          "description": "Demande (dimension principale)",
-          "type": "dimension"
-        },
-        {
-          "id": "statutGlobal",
-          "description": "Statut Global de la demande",
-          "type": "dimension"
-        },
-        {
-          "id": "currentUser",
-          "description": "Utilisateur courant (login ou nom)",
-          "type": "dimension"
-        },
-        {
-          "id": "nomProjet",
-          "description": "Nom du Projet",
-          "type": "dimension"
-        },
-        {
-          "id": "responsableProjet",
-          "description": "Responsable Projet",
-          "type": "dimension"
-        },
-        {
-          "id": "statutAction",
-          "description": "Code étape en cours (A3, A4, A5, A6, A7, A8 ou B1)",
-          "type": "dimension"
-        },
-        {
-          "id": "responsableAction",
-          "description": "Responsable de l'action en cours",
-          "type": "dimension"
-        },
-        {
-          "id": "respA3",
-          "description": "Responsable Contrôle Département (A3)",
-          "type": "dimension"
-        },
-        {
-          "id": "respA4",
-          "description": "Responsable Validation Département (A4)",
-          "type": "dimension"
-        },
-        {
-          "id": "respA5",
-          "description": "Responsable Contrôle Section (A5)",
-          "type": "dimension"
-        },
-        {
-          "id": "respA6",
-          "description": "Responsable Validation Section (A6)",
-          "type": "dimension"
-        },
-        {
-          "id": "respA7",
-          "description": "Responsable Contrôle Décanat (A7)",
-          "type": "dimension"
-        },
-        {
-          "id": "respA8",
-          "description": "Responsable Validation Décanat (A8)",
-          "type": "dimension"
-        },
-        {
-          "id": "respB1",
-          "description": "Responsable Validation Rectorat (B1)",
+          "id": "dimensions",
+          "description": "Ajoute ici toutes les dimensions (NumeroDemande, Category, etc.)",
           "type": "dimension"
         }
       ]

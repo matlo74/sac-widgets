@@ -520,49 +520,61 @@
       }));
     }
 
-    // ── Résolution des index de dimension dans le result set ───────
+    // ── Construit l'index : ID technique dimension → N dans dimensions_N ──
     /**
-     * Construit la map { feedId → index dans dimensions_N }.
-     * Les feeds non liés ne consomment pas d'index → pas d'incrément.
-     * Compatible avec le binding partiel (sous-ensemble des 14 feeds).
+     * Lit db.metadata pour savoir quelle colonne (dimensions_N)
+     * correspond à quel ID technique de dimension SAC.
      *
-     * @param {object} metadata  Métadonnées SAC du data binding
-     * @returns {Object.<string,number>}
+     * Supporte : metadata.feeds[].dimensions = ["DimId", ...] ou [{ id:"DimId" }, ...]
+     *
+     * @param {object} metadata  db.metadata du data binding SAC
+     * @returns {Object.<string,number>}  { "NumeroDemande": 0, "Category": 1, ... }
      */
-    _buildFieldMap(metadata) {
+    _buildDimIndex(metadata) {
       const map = {};
       if (!metadata || !Array.isArray(metadata.feeds)) return map;
-      let idx = 0;
+      let globalIdx = 0;
       for (const feed of metadata.feeds) {
-        const boundCount = Array.isArray(feed.dimensions) ? feed.dimensions.length : 0;
-        if (boundCount > 0) {
-          map[feed.id] = idx;
-          idx += boundCount;
+        const dims = Array.isArray(feed.dimensions) ? feed.dimensions : [];
+        for (const dim of dims) {
+          const id = typeof dim === "string" ? dim
+                   : (dim.id || dim.dimensionId || dim.name || null);
+          if (id) map[id] = globalIdx;
+          globalIdx++;
         }
       }
       return map;
     }
 
-    // ── Accès par index de feed (binding natif SAC) ────────────────
-    _getValue(row, fieldMap, feedId) {
-      const i = fieldMap[feedId];
-      if (i === undefined) return null;
-      const cell = row[`dimensions_${i}`];
-      return cell ? (cell.label || cell.id || null) : null;
-    }
-
-    // ── Accès par ID technique de dimension (feedMapping builder) ──
-    _getValueByDimId(row, dimId) {
+    // ── Lit la valeur d'une dimension via son ID technique ─────────
+    _getValueByDimId(row, dimId, dimIndex) {
       if (!dimId) return null;
-      // Essai 1 : clé exacte
-      const c1 = row[dimId];
-      if (c1 !== undefined && c1 !== null) {
-        return c1.description || c1.label || c1.id || String(c1) || null;
+
+      // ── Via l'index de métadonnées (méthode principale) ──────────
+      if (dimIndex) {
+        const idx = dimIndex[dimId];
+        if (idx !== undefined) {
+          const cell = row[`dimensions_${idx}`];
+          if (cell) return cell.label || cell.id || null;
+        }
       }
-      // Essai 2 : clé exacte + "_0" (suffixe parfois ajouté par SAC)
+
+      // ── Fallbacks (si métadonnées non disponibles) ───────────────
+      // 1. Clé exacte (certaines versions SAC)
+      const c1 = row[dimId];
+      if (c1 != null) return c1.label || c1.description || c1.id || String(c1) || null;
+
+      // 2. Clé avec suffixe _0
       const c2 = row[dimId + "_0"];
-      if (c2 !== undefined && c2 !== null) {
-        return c2.description || c2.label || c2.id || String(c2) || null;
+      if (c2 != null) return c2.label || c2.description || c2.id || String(c2) || null;
+
+      // 3. Scan de toutes les clés dimensions_N (dernier recours)
+      for (const key of Object.keys(row)) {
+        if (!key.startsWith("dimensions_")) continue;
+        const cell = row[key];
+        if (cell && (cell.id === dimId || cell.label === dimId)) {
+          return cell.label || cell.id || null;
+        }
       }
       return null;
     }
@@ -591,27 +603,19 @@
         const db = this.dataBindings && this.dataBindings.getDataBinding("validationData");
         if (db && Array.isArray(db.data) && db.data.length > 0) {
           const feedMapping = this._parseFeedMapping();
-          const useFeedMapping = Object.values(feedMapping).some(v => v && String(v).trim());
-
-          if (useFeedMapping) {
-            // ── Mode feedMapping (configuré via le panel builder) ──
-            console.info("[ValidationFlow] Mode feedMapping activé", feedMapping);
-            this._renderCardsByMapping(r.getElementById("vfwGrid"), db.data, feedMapping);
-          } else {
-            // ── Mode binding natif SAC (feeds liés via onglet Données) ──
-            const fieldMap = this._buildFieldMap(db.metadata);
-            this._renderCards(r.getElementById("vfwGrid"), db.data, fieldMap);
-          }
-
+          const dimIndex    = this._buildDimIndex(db.metadata);
+          console.info("[ValidationFlow] dimIndex :", dimIndex,
+                       "feedMapping :", feedMapping,
+                       "1er row :", Object.keys(db.data[0] || {}));
+          this._renderCardsByMapping(r.getElementById("vfwGrid"), db.data, feedMapping, dimIndex);
           const n = db.data.length;
           r.getElementById("vfwCount").textContent =
             `${n} demande${n > 1 ? "s" : ""}`;
           return;
         }
-        // Debug : log les clés disponibles si data binding connecté mais vide
         if (db) {
-          console.info("[ValidationFlow] data binding connecté mais data vide.",
-            "metadata:", db.metadata, "feedMapping:", this._parseFeedMapping());
+          console.info("[ValidationFlow] binding connecté mais data vide.",
+            "metadata :", db.metadata);
         }
       } catch (err) {
         console.warn("[ValidationFlowWidget] Erreur data binding :", err);
@@ -637,17 +641,12 @@
     }
 
     // ── Rendu via feedMapping (IDs techniques de dimension) ───────
-    _renderCardsByMapping(grid, rows, feedMapping) {
-      // Log la structure du 1er row pour aider au debug
-      if (rows.length > 0) {
-        console.info("[ValidationFlow] Clés du 1er row :", Object.keys(rows[0]));
-      }
-      // Délègue à _renderCards en utilisant _getValueByDimId
+    _renderCardsByMapping(grid, rows, feedMapping, dimIndex) {
       grid.innerHTML = "";
       const showProject = this._props.showProjectName !== false;
 
       rows.forEach((row) => {
-        const g = (fId) => this._getValueByDimId(row, feedMapping[fId]);
+        const g = (fId) => this._getValueByDimId(row, feedMapping[fId], dimIndex);
         const demande    = g("demande")           || "—";
         const stGlobal   = g("statutGlobal")      || "—";
         const user       = g("currentUser")       || "—";
