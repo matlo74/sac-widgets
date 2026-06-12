@@ -1,6 +1,6 @@
 /**
  * Validation Flow Widget — Builder Panel
- * Version : 1.2.0
+ * Version : 1.4.0
  * Vendor  : emineo
  *
  * Panel de configuration affiché dans le sidebar SAC (onglet "Générateur").
@@ -139,6 +139,54 @@
       .bp-toggle input:checked ~ .bp-track::after { transform: translateX(16px); }
       .bp-toggle input:focus ~ .bp-track { box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
 
+      /* ── Textarea rawData ───────────────────────────────────────── */
+      .bp-textarea {
+        width: 100%;
+        min-height: 110px;
+        padding: 8px 10px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 11px;
+        font-family: "Courier New", monospace;
+        color: #0f172a;
+        background: #f8fafc;
+        outline: none;
+        resize: vertical;
+        line-height: 1.5;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .bp-textarea:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+        background: #fff;
+      }
+      .bp-textarea.filled { background: #f0fdf4; border-color: #bbf7d0; }
+      .bp-textarea::placeholder { color: #cbd5e1; font-style: italic; }
+      .bp-data-btn {
+        margin-top: 8px;
+        padding: 6px 12px;
+        background: #f1f5f9;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 7px;
+        font-size: 11.5px;
+        font-weight: 600;
+        font-family: inherit;
+        color: #475569;
+        cursor: pointer;
+        transition: background 0.14s, border-color 0.14s;
+        display: inline-flex; align-items: center; gap: 5px;
+      }
+      .bp-data-btn:hover { background: #e2e8f0; border-color: #cbd5e1; }
+      .bp-data-btn.demo-on {
+        background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8;
+      }
+      .bp-demo-badge {
+        display: inline-block;
+        background: #dbeafe; color: #1d4ed8;
+        border-radius: 4px; padding: 1px 6px;
+        font-size: 10px; font-weight: 700; margin-left: 4px;
+      }
+
       /* ── Mapping ───────────────────────────────────────────────── */
       .bp-map-info {
         background: #f0f9ff;
@@ -242,7 +290,49 @@
         </div>
       </div>
 
-      <!-- ════ Section 2 : Mapping des dimensions ════ -->
+      <!-- ════ Section 2 : Données ════ -->
+      <div class="bp-section">
+        <p class="bp-section-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          </svg>
+          Données
+        </p>
+
+        <!-- Toggle mode démo -->
+        <div class="bp-field">
+          <div class="bp-toggle-row">
+            <span class="bp-toggle-label">
+              Mode démo
+              <span class="bp-demo-badge" id="bpDemoBadge" style="display:none">ACTIF</span>
+            </span>
+            <label class="bp-toggle">
+              <input id="bpDemoMode" type="checkbox" />
+              <span class="bp-track"></span>
+            </label>
+          </div>
+          <p style="font-size:11px;color:#94a3b8;margin:4px 0 0;">
+            Affiche 4 demandes fictives pour tester le rendu.
+          </p>
+        </div>
+
+        <!-- Textarea rawData -->
+        <div class="bp-field">
+          <label class="bp-label" for="bpRawData">
+            Données JSON
+            <span style="font-weight:400;color:#94a3b8;font-size:10.5px;"> — ou via script OSE</span>
+          </label>
+          <textarea id="bpRawData" class="bp-textarea"
+            placeholder='[&#10;  {&#10;    "NumeroDemande": "DEM-001",&#10;    "Category": "En cours",&#10;    "Statut_Action": "A5"&#10;  }&#10;]'
+          ></textarea>
+          <p style="font-size:11px;color:#94a3b8;margin:5px 0 0;">
+            Clés JSON = IDs techniques SAC (mêmes que dans la section Mapping ci-dessous).
+          </p>
+        </div>
+      </div>
+
+      <!-- ════ Section 3 : Mapping des dimensions ════ -->
       <div class="bp-section">
         <p class="bp-section-title">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
@@ -258,7 +348,7 @@
         <div id="bpMappingFields"><!-- généré --></div>
       </div>
 
-      <!-- ════ Section 3 : Palette statuts ════ -->
+      <!-- ════ Section 4 : Palette statuts ════ -->
       <div class="bp-section">
         <p class="bp-section-title">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
@@ -308,7 +398,8 @@
         maxColumns:      3,
         showProjectName: true,
         feedMapping:     {},
-        availableDims:   ""
+        rawData:         "[]",
+        demoMode:        false
       };
       this._ready  = false;
       this._timers = {};
@@ -323,45 +414,23 @@
 
     // ── SAC Lifecycle ──────────────────────────────────────────────
     onCustomWidgetBeforeUpdate(changed) {
-      const prevDims = this._props.availableDims;
       this._props = Object.assign({}, this._props, changed);
-      // Régénère les champs si la liste des dimensions a changé
-      if (this._ready && changed.availableDims !== undefined && changed.availableDims !== prevDims) {
-        this._renderMappingFields();
-        this._attachMappingListeners();
-      }
     }
     onCustomWidgetAfterUpdate() {
       if (this._ready) this._syncUI();
     }
 
-    // ── Retourne la liste des dimensions disponibles ──────────────
-    _getDims() {
-      const av = this._props.availableDims || "";
-      return av.split("|").map(s => s.trim()).filter(Boolean);
-    }
-
-    // ── Génération des champs de mapping ──────────────────────────
+    // ── Génération des champs de mapping (saisie texte) ───────────
     _renderMappingFields() {
       const container = this._root.getElementById("bpMappingFields");
       if (!container) return;
-      const dims    = this._getDims();
       const mapping = this._props.feedMapping || {};
-      const hasDims = dims.length > 0;
 
       let currentGroup = null;
-      let html = "";
-
-      // Message d'état
-      if (hasDims) {
-        html += `<div class="bp-map-info" style="background:#f0fdf4;border-color:#bbf7d0;color:#15803d;">
-          <strong>${dims.length} dimension(s) détectée(s)</strong> — sélectionnez dans les menus.
-        </div>`;
-      } else {
-        html += `<div class="bp-map-info">
-          Ajoutez d'abord les dimensions dans le panneau <strong>Données</strong>, puis revenez ici.
-        </div>`;
-      }
+      let html = `<div class="bp-map-info">
+        Saisissez l'<strong>ID technique SAC</strong> de chaque dimension/propriété.<br/>
+        <em>Ces IDs seront les clés de votre JSON dans la section Données ci-dessus.</em>
+      </div>`;
 
       FEED_LABELS.forEach(({ id, label, group, ph }) => {
         if (group !== currentGroup) {
@@ -369,32 +438,17 @@
           html += `<div class="bp-map-group-lbl">${group}</div>`;
         }
         const curVal = mapping[id] || "";
-        if (hasDims) {
-          const opts = dims.map(d =>
-            `<option value="${d}" ${d === curVal ? "selected" : ""}>${d}</option>`
-          ).join("");
-          html += `
-            <div class="bp-map-row">
-              <span class="bp-map-lbl" title="${label}">${label}</span>
-              <select class="bp-map-input ${curVal ? 'filled' : ''}"
-                      data-feed-id="${id}">
-                <option value="">— choisir —</option>
-                ${opts}
-              </select>
-            </div>`;
-        } else {
-          html += `
-            <div class="bp-map-row">
-              <span class="bp-map-lbl" title="${label}">${label}</span>
-              <input class="bp-map-input ${curVal ? 'filled' : ''}"
-                     data-feed-id="${id}"
-                     placeholder="${ph}"
-                     type="text"
-                     autocomplete="off"
-                     spellcheck="false"
-                     value="${curVal}" />
-            </div>`;
-        }
+        html += `
+          <div class="bp-map-row">
+            <span class="bp-map-lbl" title="${label}">${label}</span>
+            <input class="bp-map-input ${curVal ? 'filled' : ''}"
+                   data-feed-id="${id}"
+                   placeholder="${ph}"
+                   type="text"
+                   autocomplete="off"
+                   spellcheck="false"
+                   value="${curVal}" />
+          </div>`;
       });
       container.innerHTML = html;
     }
@@ -423,6 +477,24 @@
       // Toggle projet
       r.getElementById("bpShowProject").addEventListener("change", (e) => {
         this._dispatch("showProjectName", e.target.checked);
+      });
+
+      // Toggle mode démo
+      r.getElementById("bpDemoMode").addEventListener("change", (e) => {
+        const on = e.target.checked;
+        const badge = r.getElementById("bpDemoBadge");
+        if (badge) badge.style.display = on ? "inline-block" : "none";
+        this._dispatch("demoMode", on);
+      });
+
+      // Textarea rawData
+      const rawTa = r.getElementById("bpRawData");
+      rawTa.addEventListener("input", () => {
+        this._debounce("rawData", 600, () => {
+          const val = rawTa.value.trim();
+          rawTa.classList.toggle("filled", val.length > 2 && val !== "[]");
+          this._dispatch("rawData", val || "[]");
+        });
       });
 
       this._attachMappingListeners();
@@ -473,6 +545,23 @@
       const cb = r.getElementById("bpShowProject");
       if (cb) cb.checked = this._props.showProjectName !== false;
 
+      // demoMode
+      const dm = r.getElementById("bpDemoMode");
+      if (dm) {
+        dm.checked = !!this._props.demoMode;
+        const badge = r.getElementById("bpDemoBadge");
+        if (badge) badge.style.display = this._props.demoMode ? "inline-block" : "none";
+      }
+
+      // rawData textarea
+      const rawTa = r.getElementById("bpRawData");
+      if (rawTa && document.activeElement !== rawTa) {
+        const val = this._props.rawData || "[]";
+        rawTa.value = val === "[]" ? "" : val;
+        rawTa.classList.toggle("filled", val.length > 2 && val !== "[]");
+      }
+
+      // feedMapping
       const mapping = this._props.feedMapping || {};
       FEED_LABELS.forEach(({ id }) => {
         const el = r.querySelector(`.bp-map-input[data-feed-id="${id}"]`);
